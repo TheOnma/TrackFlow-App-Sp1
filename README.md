@@ -1,14 +1,26 @@
 # TrackFlow
 
-A minimalist task checker app with zero-knowledge proof generation using SP1.
+A minimalist task checker app built on [Succinct](https://succinct.xyz/) using SP1 for zero-knowledge proof generation. This project demonstrates the integration of zero-knowledge proofs with a modern web application using Succinct's SP1 proving system.
 
 ## Features
 
 - Task management with categories (Work, Personal, Urgent, Study, Health)
-- Zero-knowledge proof generation for task completion
-- Task completion sharing on X/Twitter
+- Zero-knowledge proof generation for task completion using SP1
+- Task completion sharing on X/Twitter with proof verification
 - Local storage persistence
 - Beautiful dark theme UI with pink accents
+
+## About Succinct & SP1
+
+This project is built on Succinct's SP1 platform, which provides:
+- Fast zero-knowledge proof generation
+- Simple Rust-based proving system
+- Efficient verification of computational claims
+- Seamless integration with web applications
+
+Learn more:
+- [Succinct](https://succinct.xyz/) - Building the zkVM for all developers
+- [SP1](https://github.com/succinctlabs/sp1) - The proving system used in this project
 
 ## Prerequisites
 

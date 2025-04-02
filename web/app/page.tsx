@@ -18,10 +18,11 @@ const CATEGORIES: Record<CategoryType, string> = {
 };
 
 export default function TrackFlow() {
+  const [showDashboard, setShowDashboard] = useState(false);
   const [taskInput, setTaskInput] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [proofResult, setProofResult] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>("Work");
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType>("Work");
 
   useEffect(() => {
     const savedTasks = localStorage.getItem("trackflow-tasks");
@@ -94,6 +95,33 @@ export default function TrackFlow() {
     window.open(url, "_blank");
   };
 
+  if (!showDashboard) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-black via-black to-pink-900/30 flex items-center justify-center">
+        <div className="w-full max-w-md mx-4 bg-black/90 backdrop-blur-sm rounded-lg shadow-2xl shadow-pink-500/20 p-8 border-2 border-pink-300/50 relative before:absolute before:inset-0 before:-z-10 before:rounded-lg before:bg-gradient-to-br before:from-pink-500/10 before:to-transparent text-center">
+          <h1 className="text-4xl font-bold text-center text-white mb-4 bg-gradient-to-r from-pink-300 via-pink-200 to-pink-300 bg-clip-text text-transparent drop-shadow-lg">
+            TrackFlow
+          </h1>
+          <p className="text-pink-300 mb-8">Track your tasks with zero-knowledge proof generation using SP1</p>
+          <div className="space-y-4">
+            <button
+              onClick={() => setShowDashboard(true)}
+              className="w-full py-4 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg hover:from-pink-700 hover:to-pink-800 transition-all duration-300 font-medium shadow-lg shadow-pink-500/20"
+            >
+              Start Tracking
+            </button>
+            <button
+              className="w-full py-3 bg-gradient-to-r from-black to-pink-950/50 text-white rounded-lg hover:from-pink-950/30 hover:to-black transition-all duration-300 font-medium border-2 border-pink-300/50 shadow-lg shadow-pink-500/10"
+              onClick={() => window.open('https://docs.succinct.xyz/docs/sp1/introduction', '_blank')}
+            >
+              Learn about SP1
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-black to-pink-900/30 flex items-center justify-center">
       <div className="w-full max-w-md mx-4 bg-black/90 backdrop-blur-sm rounded-lg shadow-2xl shadow-pink-500/20 p-8 border-2 border-pink-300/50 relative before:absolute before:inset-0 before:-z-10 before:rounded-lg before:bg-gradient-to-br before:from-pink-500/10 before:to-transparent">
@@ -124,9 +152,9 @@ export default function TrackFlow() {
             {Object.entries(CATEGORIES).map(([category, gradientClass]) => (
               <button
                 key={category}
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => setSelectedCategory(category as CategoryType)}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-300 ${
-                  selectedCategory === category
+                  selectedCategory === category as CategoryType
                     ? `bg-gradient-to-r ${gradientClass} text-white ring-2 ring-white shadow-lg`
                     : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/70'
                 }`}
@@ -199,7 +227,7 @@ export default function TrackFlow() {
                 <p className="text-sm font-medium">Category Completion:</p>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {Object.entries(CATEGORIES).map(([category, gradientClass]) => {
-                    const categoryTasks = tasks.filter(t => t.category === category);
+                    const categoryTasks = tasks.filter(t => t.category === category as CategoryType);
                     const completedCount = categoryTasks.filter(t => t.done).length;
                     return (
                       <div key={category} className="flex items-center gap-1">

@@ -1,7 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "cd web && npm install && npm run build",
-  "outputDirectory": "web/.next",
-  "installCommand": "cd web && npm install",
-  "framework": "nextjs"
+  "builds": [
+    {
+      "src": "web/package.json",
+      "use": "@vercel/next",
+      "config": { "projectRoot": "web" }
+    }
+  ],
+  "routes": [{ "src": "/(.*)", "dest": "/web/$1" }]
 }

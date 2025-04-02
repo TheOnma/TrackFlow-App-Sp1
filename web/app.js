@@ -1,4 +1,4 @@
-// FocusProof Application
+// TrackFlow Application
 
 // Global variables
 let startTime = 0;
@@ -367,7 +367,7 @@ if (closePanelBtn && proofPanel) closePanelBtn.addEventListener('click', () => {
 
 // Initialize
 window.addEventListener('load', () => {
-    console.log('FocusProof App loaded!');
+    console.log('TrackFlow App loaded!');
     
     // Check if running on Vercel
     const isVercel = window.location.hostname.includes('vercel.app');
@@ -408,8 +408,7 @@ window.addEventListener('load', () => {
     
     // Ensure assets directory exists
     const checkAssetsDirectory = () => {
-        // This is just a logging function since we can't check directories from browser JS
-        console.log('Make sure you have created an "assets" directory and placed "focus-main-logo.png" there.');
+        console.log('Make sure you have created an "assets" directory and placed "trackflow-logo.png" there.');
     };
     
     checkAssetsDirectory();

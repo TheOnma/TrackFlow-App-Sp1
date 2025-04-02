@@ -2,9 +2,11 @@ use alloy_sol_types::SolType;
 use clap::Parser;
 use focus_proof_lib::PublicValuesStruct;
 use sp1_sdk::{include_elf, ProverClient, SP1Stdin};
+use trackflow_lib::PublicValuesStruct;
+use std::env;
 
-/// RISC-V ELF file for the Focus proof program.
-pub const FOCUS_PROOF_ELF: &[u8] = include_elf!("focus_proof_program");
+/// RISC-V ELF file for the TrackFlow proof program.
+pub const TRACKFLOW_ELF: &[u8] = include_elf!("trackflow_program");
 
 /// Command line arguments
 #[derive(Parser, Debug)]
@@ -63,7 +65,7 @@ fn main() {
 
     if args.execute {
         // Run program without generating proof
-        let (output, report) = client.execute(FOCUS_PROOF_ELF, &stdin).run().unwrap();
+        let (output, report) = client.execute(TRACKFLOW_ELF, &stdin).run().unwrap();
         println!("Program executed successfully.");
 
         // Read output
@@ -82,7 +84,7 @@ fn main() {
         println!("Number of instructions executed: {}", report.total_instruction_count());
     } else {
         // Setup program for proof generation
-        let (pk, vk) = client.setup(FOCUS_PROOF_ELF);
+        let (pk, vk) = client.setup(TRACKFLOW_ELF);
 
         // Generate proof
         let proof = client

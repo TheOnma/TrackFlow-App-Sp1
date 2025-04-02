@@ -49,6 +49,11 @@ export default function TrackFlow() {
     setTasks(newTasks);
   };
 
+  const deleteTask = (index: number) => {
+    const newTasks = tasks.filter((_, i) => i !== index);
+    setTasks(newTasks);
+  };
+
   const proveTasks = async () => {
     try {
       const res = await fetch("/api/prove", {
@@ -62,6 +67,12 @@ export default function TrackFlow() {
       console.error("Error generating proof:", error);
       setProofResult("Error generating proof. Please try again.");
     }
+  };
+
+  const startNewSession = () => {
+    setTasks([]);
+    setProofResult(null);
+    localStorage.removeItem("trackflow-tasks");
   };
 
   const shareToTwitter = () => {
@@ -78,7 +89,7 @@ export default function TrackFlow() {
       .map(([category, count]) => `${category}: ${count}`)
       .join(", ");
 
-    const tweetText = `I just completed ${completedTasks}/${totalTasks} tasks on TrackFlow! 🎯✨\n\nBreakdown: ${categoryStats}\n\n${proofResult}\n\nTrack your tasks with proof: \n\n@SuccinctLabs @0xCRASHOUT @nair_advaith`;
+    const tweetText = `I just completed ${completedTasks}/${totalTasks} tasks on TrackFlow! 🎯✨\n\nBreakdown: ${categoryStats}\n\n${proofResult}\n\nTrack your tasks with proof! \n\n@SuccinctLabs @0xCRASHOUT @nair_advaith @PAdekwu`;
     const url = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(tweetText);
     window.open(url, "_blank");
   };
@@ -102,7 +113,7 @@ export default function TrackFlow() {
             />
             <button
               onClick={addTask}
-              className="px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg hover:from-pink-600 hover:to-pink-700 transition-all duration-300 font-medium shadow-lg shadow-pink-500/20"
+              className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg hover:from-pink-700 hover:to-pink-800 transition-all duration-300 font-medium shadow-lg shadow-pink-500/20"
               aria-label="Add task"
             >
               Add
@@ -124,10 +135,6 @@ export default function TrackFlow() {
               </button>
             ))}
           </div>
-          
-          <p className="text-sm text-pink-200/80 mt-2">
-            {taskInput.length}/280 characters
-          </p>
         </div>
 
         <ul className="space-y-2 mb-6">
@@ -140,7 +147,7 @@ export default function TrackFlow() {
                 type="checkbox"
                 checked={task.done}
                 onChange={() => toggleTask(index)}
-                className="w-5 h-5 text-pink-500 rounded focus:ring-pink-500 bg-black border-pink-300/50 transition-colors"
+                className="w-5 h-5 text-pink-500 rounded focus:ring-pink-500 focus:ring-offset-0 bg-black border-pink-300/50 transition-colors checked:bg-pink-500 checked:hover:bg-pink-600"
                 aria-label={`Mark "${task.text}" as ${task.done ? "incomplete" : "complete"}`}
               />
               <span
@@ -153,17 +160,36 @@ export default function TrackFlow() {
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r ${CATEGORIES[task.category]} text-white shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:shadow-pink-500/10`}>
                 {task.category}
               </span>
+              <button
+                onClick={() => deleteTask(index)}
+                className="p-1.5 text-pink-300/70 hover:text-pink-300 hover:bg-pink-950/30 rounded-lg transition-all duration-300"
+                aria-label="Delete task"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
             </li>
           ))}
         </ul>
 
-        <button
-          onClick={proveTasks}
-          className="w-full py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg hover:from-pink-700 hover:to-pink-800 transition-all duration-300 font-medium shadow-lg shadow-pink-500/20"
-          aria-label="Generate proof for tasks"
-        >
-          Prove Tasks
-        </button>
+        {!proofResult ? (
+          <button
+            onClick={proveTasks}
+            className="w-full py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg hover:from-pink-700 hover:to-pink-800 transition-all duration-300 font-medium shadow-lg shadow-pink-500/20"
+            aria-label="Generate proof for tasks"
+          >
+            Prove Tasks
+          </button>
+        ) : (
+          <button
+            onClick={startNewSession}
+            className="w-full py-3 bg-gradient-to-r from-black to-pink-950/50 text-white rounded-lg hover:from-pink-950/30 hover:to-black transition-all duration-300 font-medium border-2 border-pink-300/50 shadow-lg shadow-pink-500/10"
+            aria-label="Start new session"
+          >
+            New Session
+          </button>
+        )}
 
         {proofResult && (
           <div className="mt-4 space-y-4">

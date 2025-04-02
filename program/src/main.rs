@@ -4,7 +4,9 @@
 sp1_zkvm::entrypoint!(main);
 
 use alloy_sol_types::{SolType, private::FixedBytes};
-use focus_proof_lib::{verify_focus_session, PublicValuesStruct};
+use sp1_zkvm::ops::hash::sha256;
+use sp1_zkvm::prelude::*;
+use trackflow_lib::{verify_task_completion, PublicValuesStruct};
 
 pub fn main() {
     // Read input data
@@ -14,7 +16,7 @@ pub fn main() {
     let task_hash = sp1_zkvm::io::read::<[u8; 32]>();
     
     // Verification process
-    let is_valid = verify_focus_session(start_time, end_time, planned_duration);
+    let is_valid = verify_task_completion(start_time, end_time, planned_duration);
     
     // Create public values
     let public_values = PublicValuesStruct {

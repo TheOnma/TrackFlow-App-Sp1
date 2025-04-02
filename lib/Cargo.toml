@@ -1,5 +1,5 @@
 [package]
-name = "focus_proof_lib"
+name = "trackflow_lib"
 version = "0.1.0"
 edition = "2021"
 

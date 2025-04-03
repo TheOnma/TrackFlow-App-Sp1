@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 // In a real application, you would store these in a database
 const proofResults = new Map();
+const timeoutIds = new Map();
 
 // For testing purposes, after 15 seconds, create a mock proof
-const mockProofAfterDelay = (taskId: string) => {
-  console.log(`Setting up mock proof for taskId: ${taskId}`);
-  setTimeout(() => {
+const mockProofAfterDelay = (taskId: string, delay = 15000) => {
+  console.log(`Setting up mock proof for taskId: ${taskId} with delay: ${delay}ms`);
+  
+  // Clear any existing timeout for this taskId
+  if (timeoutIds.has(taskId)) {
+    clearTimeout(timeoutIds.get(taskId));
+  }
+  
+  const timeoutId = setTimeout(() => {
     console.log(`Creating mock proof for taskId: ${taskId}`);
     const mockProof = {
       total_tasks: 1,
@@ -14,13 +21,22 @@ const mockProofAfterDelay = (taskId: string) => {
       proof_hash: Buffer.from(`mock_proof_for_${taskId}`).toString('base64')
     };
     proofResults.set(taskId, mockProof);
-  }, 15000); // 15 seconds delay
+    timeoutIds.delete(taskId);
+  }, delay);
+  
+  timeoutIds.set(taskId, timeoutId);
 };
 
 export async function POST(req: NextRequest) {
   try {
     const { proof, taskId } = await req.json();
     console.log("Received proof callback for task:", taskId);
+    
+    // Cancel any pending timeout for this taskId
+    if (timeoutIds.has(taskId)) {
+      clearTimeout(timeoutIds.get(taskId));
+      timeoutIds.delete(taskId);
+    }
     
     // Store the proof result
     proofResults.set(taskId, proof);
@@ -48,9 +64,10 @@ export async function GET(req: NextRequest) {
     console.log("Checking proof status for task:", taskId);
     
     // If this is the first time we're checking this taskId, set up a mock proof
-    if (!proofResults.has(taskId) && !process.env.VERCEL) {
-      // Only do this for local development
-      mockProofAfterDelay(taskId);
+    // ONLY for local development, not for Vercel
+    if (!proofResults.has(taskId) && !timeoutIds.has(taskId) && !process.env.VERCEL) {
+      // Only create mock proofs in local development
+      mockProofAfterDelay(taskId, 15000);
     }
     
     const proof = proofResults.get(taskId);

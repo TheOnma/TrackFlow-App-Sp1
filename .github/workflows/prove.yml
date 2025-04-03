@@ -33,10 +33,16 @@ jobs:
           echo '${{ github.event.client_payload.tasks }}' > tasks.json
           cargo run --release tasks.json > proof.json
           PROOF=$(cat proof.json)
+          echo "::set-output name=proof::$PROOF" # For backward compatibility
           echo "proof=$PROOF" >> $GITHUB_OUTPUT
           
-      - name: Call Vercel Webhook
+      - name: Call Vercel API Callback
         run: |
-          curl -X POST ${{ secrets.VERCEL_WEBHOOK_URL }} \
+          curl -X POST https://track-flow-app-sp1.vercel.app/api/proof-callback \
             -H "Content-Type: application/json" \
             -d "{\"proof\": ${{ steps.generate.outputs.proof }}, \"taskId\": \"${{ github.event.client_payload.taskId }}\"}" 
+          
+      - name: Debug Output
+        run: |
+          echo "TaskId: ${{ github.event.client_payload.taskId }}"
+          echo "Proof generated and sent to callback URL" 

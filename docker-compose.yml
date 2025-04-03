@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  sp1:
+    build: .
+    volumes:
+      - .:/workspace
+    command: bash -c "cd program && cargo run --release -- tasks.json" 

@@ -1,41 +1,48 @@
-//! SP1 proof program for the Focus app.
+use serde::{Deserialize, Serialize};
+use sha2::{Sha256, Digest};
 
-#![no_main]
-sp1_zkvm::entrypoint!(main);
+#[derive(Serialize, Deserialize)]
+struct Task {
+    text: String,
+    done: bool,
+}
 
-use alloy_sol_types::{SolType, private::FixedBytes};
-use sp1_zkvm::ops::hash::sha256;
-use sp1_zkvm::prelude::*;
-use trackflow_lib::{verify_task_completion, PublicValuesStruct};
+#[derive(Serialize, Deserialize)]
+struct TaskProof {
+    total_tasks: u32,
+    completed_tasks: u32,
+    proof_hash: [u8; 32],
+}
 
-pub fn main() {
-    // Read input data
-    let start_time = sp1_zkvm::io::read::<u32>();
-    let end_time = sp1_zkvm::io::read::<u32>();
-    let planned_duration = sp1_zkvm::io::read::<u32>();
-    let task_hash = sp1_zkvm::io::read::<[u8; 32]>();
+fn process_tasks(tasks_json: String) -> TaskProof {
+    let tasks: Vec<Task> = serde_json::from_str(&tasks_json).unwrap();
     
-    // Verification process
-    let is_valid = verify_task_completion(start_time, end_time, planned_duration);
+    // Calculate task statistics
+    let total_tasks = tasks.len() as u32;
+    let completed_tasks = tasks.iter().filter(|t| t.done).count() as u32;
     
-    // Create public values
-    let public_values = PublicValuesStruct {
-        startTime: start_time,
-        endTime: end_time,
-        duration: planned_duration,
-        completed: if is_valid { 1 } else { 0 },
-        taskHash: FixedBytes(task_hash), // Wrapped with FixedBytes
-    };
+    // Generate proof hash
+    let proof_data = format!("{}{}", total_tasks, completed_tasks);
+    let mut hasher = Sha256::new();
+    hasher.update(proof_data.as_bytes());
+    let proof_hash = hasher.finalize().into();
     
-    // Debug outputs
-    println!("Focus session verification:");
-    println!("Start Time: {}", start_time);
-    println!("End Time: {}", end_time);
-    println!("Planned Duration: {}", planned_duration);
-    println!("Actual Duration: {}", end_time - start_time);
-    println!("Verification Result: {}", if is_valid { "SUCCESS" } else { "FAILED" });
+    // Create proof output
+    TaskProof {
+        total_tasks,
+        completed_tasks,
+        proof_hash,
+    }
+}
+
+fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() != 2 {
+        eprintln!("Usage: {} <tasks.json>", args[0]);
+        std::process::exit(1);
+    }
     
-    // Encode results and provide as output
-    let bytes = PublicValuesStruct::abi_encode(&public_values);
-    sp1_zkvm::io::commit_slice(&bytes);
+    let tasks_json = std::fs::read_to_string(&args[1]).unwrap();
+    let proof = process_tasks(tasks_json);
+    println!("{}", serde_json::to_string_pretty(&proof).unwrap());
 }

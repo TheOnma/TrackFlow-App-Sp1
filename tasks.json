@@ -1,0 +1,14 @@
+[
+  {
+    "text": "Complete SP1 integration",
+    "done": true
+  },
+  {
+    "text": "Test proof generation",
+    "done": false
+  },
+  {
+    "text": "Verify on-chain",
+    "done": false
+  }
+] 

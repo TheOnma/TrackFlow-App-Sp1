@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { exec } from "child_process";
-import { promisify } from "util";
-import path from "path";
-import fs from 'fs/promises';
 
-const execAsync = promisify(exec);
+const GITHUB_PAT = process.env.NEXT_PUBLIC_GITHUB_PAT;
+if (!GITHUB_PAT) {
+  console.warn('NEXT_PUBLIC_GITHUB_PAT environment variable is not set');
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,56 +11,48 @@ export async function POST(req: NextRequest) {
     const { tasks } = await req.json();
     console.log("Tasks received:", tasks);
     
-    // Format tasks for SP1
-    const tasksJson = JSON.stringify(tasks);
-    console.log("Formatted tasks JSON:", tasksJson);
-    
-    // Get the absolute path to the program directory
-    const programDir = path.join(process.cwd(), "..", "program");
-    console.log("Program directory:", programDir);
-    
-    // Ensure program directory exists
-    try {
-      await fs.access(programDir);
-    } catch (error) {
-      console.error("Program directory not found:", programDir);
-      throw new Error("Program directory not found");
+    if (!GITHUB_PAT) {
+      throw new Error('GitHub token not configured');
     }
     
-    // Create a temporary file for the tasks
-    const tempFile = path.join(programDir, "tasks.json");
-    await fs.writeFile(tempFile, tasksJson);
-    console.log("Created temporary file:", tempFile);
+    // Generate a unique task ID
+    const taskId = Math.random().toString(36).substring(7);
     
-    try {
-      // Run the program with the tasks file
-      console.log("Running cargo command...");
-      const { stdout, stderr } = await execAsync("cargo run --release tasks.json", {
-        cwd: programDir,
-        env: { ...process.env }
-      });
-      console.log("Command stdout:", stdout);
-      if (stderr) console.log("Command stderr:", stderr);
-      
-      // Parse the proof result
-      const proof = JSON.parse(stdout);
-      console.log("Parsed proof:", proof);
-      
-      return NextResponse.json({ 
-        proof,
-        success: true 
-      });
-    } finally {
-      // Clean up the temporary file
-      try {
-        await fs.unlink(tempFile);
-        console.log("Cleaned up temporary file");
-      } catch (error) {
-        console.error("Error cleaning up temporary file:", error);
+    // Trigger GitHub Action
+    const response = await fetch(
+      `https://api.github.com/repos/TheOnma/TrackFlow-App-Sp1/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `Bearer ${GITHUB_PAT}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event_type: 'generate_proof',
+          client_payload: {
+            tasks,
+            taskId
+          }
+        }),
       }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('GitHub API response:', errorText);
+      throw new Error(`GitHub API error: ${response.statusText}`);
     }
+    
+    // Return the task ID that the client can use to check the status
+    return NextResponse.json({ 
+      success: true,
+      taskId,
+      message: "Proof generation started. Check status using the taskId."
+    });
+    
   } catch (error) {
-    console.error("Error in proof generation:", error);
+    console.error("Error triggering proof generation:", error);
     return NextResponse.json(
       { error: String(error), success: false },
       { status: 500 }

@@ -1,0 +1,42 @@
+name: SP1 Proof Generation
+
+on:
+  repository_dispatch:
+    types: [generate_proof]
+
+jobs:
+  generate-proof:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            program/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          
+      - name: Generate Proof
+        id: generate
+        working-directory: ./program
+        run: |
+          echo '${{ github.event.client_payload.tasks }}' > tasks.json
+          cargo run --release tasks.json > proof.json
+          PROOF=$(cat proof.json)
+          echo "proof=$PROOF" >> $GITHUB_OUTPUT
+          
+      - name: Call Vercel Webhook
+        run: |
+          curl -X POST ${{ secrets.VERCEL_WEBHOOK_URL }} \
+            -H "Content-Type: application/json" \
+            -d "{\"proof\": ${{ steps.generate.outputs.proof }}, \"taskId\": \"${{ github.event.client_payload.taskId }}\"}" 

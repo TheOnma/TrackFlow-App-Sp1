@@ -26,6 +26,9 @@ export default function TrackFlow() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [proof, setProof] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>("Work");
+  const [isProving, setIsProving] = useState(false);
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [proofError, setProofError] = useState<string | null>(null);
 
   useEffect(() => {
     const savedTasks = localStorage.getItem("trackflow-tasks");
@@ -35,6 +38,40 @@ export default function TrackFlow() {
   useEffect(() => {
     localStorage.setItem("trackflow-tasks", JSON.stringify(tasks));
   }, [tasks]);
+
+  // Poll for proof results when we have a taskId
+  useEffect(() => {
+    if (!taskId) return;
+    
+    console.log("Starting to poll for proof with taskId:", taskId);
+    
+    const checkProofStatus = async () => {
+      try {
+        const response = await fetch(`/api/proof-callback?taskId=${taskId}`);
+        const data = await response.json();
+        console.log("Proof status:", data);
+        
+        if (data.status === 'completed' && data.proof) {
+          console.log("Proof received:", data.proof);
+          setProof(data.proof);
+          setIsProving(false);
+          setTaskId(null);
+          setShowProof(true);
+          setShowDashboard(false);
+        } else if (data.error) {
+          console.error("Error in proof generation:", data.error);
+          setProofError(data.error);
+          setIsProving(false);
+          setTaskId(null);
+        }
+      } catch (error) {
+        console.error("Error checking proof status:", error);
+      }
+    };
+
+    const interval = setInterval(checkProofStatus, 3000); // Check every 3 seconds
+    return () => clearInterval(interval);
+  }, [taskId]);
 
   const addTask = () => {
     if (taskInput.trim() && taskInput.length <= 280) {
@@ -60,6 +97,9 @@ export default function TrackFlow() {
 
   const handleProve = async () => {
     try {
+      setIsProving(true);
+      setProofError(null);
+      
       const response = await fetch("/api/prove", {
         method: "POST",
         headers: {
@@ -69,15 +109,19 @@ export default function TrackFlow() {
       });
 
       const data = await response.json();
+      console.log("API response:", data);
+      
       if (data.success) {
-        setProof(data.proof);
-        setShowProof(true);
-        setShowDashboard(false);
+        setTaskId(data.taskId);
+        // Now we'll wait for the polling mechanism to update the proof
       } else {
-        console.error("Proof generation failed:", data.error);
+        setProofError(data.error || "Unknown error occurred");
+        setIsProving(false);
       }
     } catch (error) {
       console.error("Error generating proof:", error);
+      setProofError("Network error occurred");
+      setIsProving(false);
     }
   };
 
@@ -356,11 +400,18 @@ export default function TrackFlow() {
           
           <button
             onClick={handleProve}
-            className="w-full py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg hover:from-pink-700 hover:to-pink-800 transition-all duration-300 font-medium shadow-lg shadow-pink-500/20"
+            disabled={isProving || tasks.length === 0}
+            className={`w-full py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg hover:from-pink-700 hover:to-pink-800 transition-all duration-300 font-medium shadow-lg shadow-pink-500/20 ${isProving ? 'opacity-70 cursor-not-allowed' : ''}`}
             aria-label="Generate proof for tasks"
           >
-            Prove Tasks
+            {isProving ? 'Generating Proof...' : 'Prove Tasks'}
           </button>
+          
+          {proofError && (
+            <div className="mt-4 p-3 bg-red-900/30 text-red-200 rounded-lg border border-red-400/30">
+              Error: {proofError}
+            </div>
+          )}
         </div>
       </div>
     </div>

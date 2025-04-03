@@ -49,9 +49,23 @@ jobs:
           
       - name: Call Vercel API Callback
         run: |
-          curl -X POST https://track-flow-app-sp1.vercel.app/api/proof-callback \
+          # Prepare a proper JSON payload
+          echo "Sending proof data to callback URL"
+          TASKID="${{ github.event.client_payload.taskId }}"
+          echo "TaskId: $TASKID"
+          
+          # Format the JSON payload properly
+          PROOF_DATA=$(cat ./program/proof_output.json)
+          echo "Proof data: $PROOF_DATA"
+          
+          # Create a temporary JSON file with the full payload
+          echo "{\"proof\": $PROOF_DATA, \"taskId\": \"$TASKID\"}" > callback_payload.json
+          cat callback_payload.json
+          
+          # Send to the callback URL
+          curl -v -X POST https://track-flow-app-sp1.vercel.app/api/proof-callback \
             -H "Content-Type: application/json" \
-            -d "{\"proof\": ${{ steps.generate.outputs.proof }}, \"taskId\": \"${{ github.event.client_payload.taskId }}\"}" 
+            -d @callback_payload.json
           
       - name: Debug Output
         run: |

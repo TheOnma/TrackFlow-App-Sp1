@@ -29,7 +29,20 @@ const mockProofAfterDelay = (taskId: string, delay = 15000) => {
 
 export async function POST(req: NextRequest) {
   try {
-    const { proof, taskId } = await req.json();
+    console.log("Received proof callback request");
+    const body = await req.json();
+    console.log("Callback body received:", JSON.stringify(body));
+    
+    const { proof, taskId } = body;
+    
+    if (!taskId) {
+      console.error("Missing taskId in callback request");
+      return NextResponse.json(
+        { error: "Missing taskId" },
+        { status: 400 }
+      );
+    }
+    
     console.log("Received proof callback for task:", taskId);
     
     // Cancel any pending timeout for this taskId
@@ -39,6 +52,8 @@ export async function POST(req: NextRequest) {
     }
     
     // Store the proof result
+    console.log("Storing proof for taskId:", taskId);
+    console.log("Proof data:", JSON.stringify(proof));
     proofResults.set(taskId, proof);
     
     return NextResponse.json({ success: true });
@@ -77,6 +92,9 @@ export async function GET(req: NextRequest) {
         { status: 202 }
       );
     }
+    
+    console.log("Found proof for taskId:", taskId);
+    console.log("Proof data:", JSON.stringify(proof));
     
     // Optionally, clear the result after returning it
     proofResults.delete(taskId);

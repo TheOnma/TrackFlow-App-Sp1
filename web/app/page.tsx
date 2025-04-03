@@ -47,9 +47,10 @@ export default function TrackFlow() {
     
     const checkProofStatus = async () => {
       try {
+        console.log("Checking proof status for taskId:", taskId);
         const response = await fetch(`/api/proof-callback?taskId=${taskId}`);
         const data = await response.json();
-        console.log("Proof status:", data);
+        console.log("Proof status response:", data);
         
         if (data.status === 'completed' && data.proof) {
           console.log("Proof received:", data.proof);
@@ -234,7 +235,7 @@ export default function TrackFlow() {
             <div className="bg-pink-950/30 p-6 rounded-lg border border-pink-300/20">
               <h3 className="font-semibold mb-2 text-pink-200">SP1 Proof</h3>
               <pre className="text-sm overflow-auto max-h-60 text-pink-100 bg-black/50 p-4 rounded">
-                {JSON.stringify(proof, null, 2)}
+                {proof ? JSON.stringify(proof, null, 2) : 'No proof data available'}
               </pre>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -250,7 +251,9 @@ export default function TrackFlow() {
             <div className="bg-pink-950/30 p-6 rounded-lg border border-pink-300/20">
               <h3 className="font-semibold mb-2 text-pink-200">Proof Hash</h3>
               <code className="text-sm break-all text-pink-100 block bg-black/50 p-4 rounded">
-                {proof?.proof_hash ? Buffer.from(proof.proof_hash).toString('hex') : ''}
+                {proof?.proof_hash ? (Array.isArray(proof.proof_hash) ? 
+                    Buffer.from(proof.proof_hash).toString('hex') : 
+                    proof.proof_hash) : 'No proof hash available'}
               </code>
             </div>
             <button

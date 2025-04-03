@@ -37,10 +37,15 @@ jobs:
         run: |
           echo '${{ toJSON(github.event.client_payload.tasks) }}' > tasks.json
           cat tasks.json
-          cargo run --release tasks.json > proof.json || { cat tasks.json; exit 1; }
-          PROOF=$(cat proof.json)
-          echo "::set-output name=proof::$PROOF" # For backward compatibility
-          echo "proof=$PROOF" >> $GITHUB_OUTPUT
+          cargo run --release tasks.json > proof_output.json || { cat tasks.json; exit 1; }
+          cat proof_output.json
+          # Fix any JSON formatting issues and ensure it starts with {
+          sed -i '1s/^[^{]/\{/' proof_output.json
+          PROOF=$(cat proof_output.json)
+          # Use GitHub Actions environment file for outputs
+          echo "proof<<EOF" >> $GITHUB_OUTPUT
+          echo "$PROOF" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           
       - name: Call Vercel API Callback
         run: |

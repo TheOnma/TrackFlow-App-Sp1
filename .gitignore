@@ -43,3 +43,6 @@ Cargo.lock
 program/target/
 program/debug/
 program/release/
+
+# Next.js SWC binary
+**/next-swc.*.node

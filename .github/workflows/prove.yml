@@ -25,13 +25,19 @@ jobs:
             ~/.cargo/git
             program/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Debug client payload
+        run: |
+          echo "Received tasks: ${{ toJSON(github.event.client_payload.tasks) }}"
+          echo "TaskId: ${{ github.event.client_payload.taskId }}"
           
       - name: Generate Proof
         id: generate
         working-directory: ./program
         run: |
-          echo '${{ github.event.client_payload.tasks }}' > tasks.json
-          cargo run --release tasks.json > proof.json
+          echo '${{ toJSON(github.event.client_payload.tasks) }}' > tasks.json
+          cat tasks.json
+          cargo run --release tasks.json > proof.json || { cat tasks.json; exit 1; }
           PROOF=$(cat proof.json)
           echo "::set-output name=proof::$PROOF" # For backward compatibility
           echo "proof=$PROOF" >> $GITHUB_OUTPUT
